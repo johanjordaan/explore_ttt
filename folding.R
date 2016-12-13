@@ -12,3 +12,6 @@ f <- function(acc,d) {
 }
 
 r <- reduce(l,f,.init=df[-1,]) 
+
+
+
