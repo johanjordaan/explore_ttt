@@ -51,7 +51,7 @@ mat2 <- as.matrix(dt2)
 gameEndState <- function(acc,game) {
   class <- 0
   if(game$winner != NONE) {
-    if(game$movesP[1] == game$winner) { class <- 2 } 
+    if(game$startingPlayer == game$winner) { class <- 2 } 
     else { class <- 1 }
   }
   mat2[acc,1] <<- class
