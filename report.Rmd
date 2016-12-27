@@ -7,9 +7,70 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library("dplyr")
+library("ggplot2")
+library("RColorBrewer")
 ```
 
 ## Introduction
+I love playing all sorts of games and it seemed like a natural place to apply some of my machine learning and data science knowledge. I decided to start with a all time classic, Tic-Tac-Toe. I reasoned that this will allow me to concentrate on developing a methodology for investigating the properties of games without concentradting to much on the actual game.  
+
+## Methodology
+I am assuming that I don't know the actual game or it's rules.Obviously I know that the game is Tic-Tac-Toe, but as far as possible I will edevour to not let my analysis be clouded by what I know of TTT. All I have access to is a set of simulations of the game. Each line item contains the following data:
+
+Game specific elements
+* gameId
+* numMoves
+* winner
+
+Move specific elements
+* moveNumber
+* result
+* move
+* player
+
+## New players
+I am going to develop some new players based on the anayslsis.
+
+## Initial analysis
+```{r load_data,echo=FALSE}
+d <- readRDS("./moves100k.rds")
+numMovesStats = d %>% filter(moveNumber==1) %>% summarise(mean=mean(numMoves),sd=sd(numMoves)) 
+```
+
+Total number of games ```r length(unique(d$gameId))```
+
+Total number of moves ```r nrow(d)```
+
+Number of players ```r length(unique(d$player))``` [```r levels(d$player)```]
+
+Number of game state ```r length(unique(d$winner))``` [```r levels(d$winner)```]
+
+## Basic stats
+
+Average number of moves per game ```r numMovesStats$mean``` with a sd of ```r numMovesStats$sd```
+
+```{r game_stats,echo=FALSE}
+stats = d %>% 
+        filter(moveNumber==1) %>% 
+        group_by(winner) %>% 
+        summarise(count=n())
+print(stats)
+```
+
+```{r win_loss_random,echo=FALSE}
+wins <- stats$count[1]
+losses <- stats$count[2]
+print(binom.test(wins,wins+losses))
+
+gd <- d %>% 
+     filter(moveNumber==1) %>% 
+     group_by(winner) 
+
+g0 <- ggplot(data=gd,aes(x=winner,fill=as.factor(winner)))+ geom_bar()+scale_fill_brewer(palette = "Accent")
+print(g0)
+```
+
 
 
 ## Questions
@@ -22,24 +83,3 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 
-
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

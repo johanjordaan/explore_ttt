@@ -3,33 +3,47 @@ library("purrr")
 library("ggplot2")
 library("rt3")
 
+set.seed(1337)
 ptm <- proc.time()
 games <- lapply(c(1:100000),function(i) { return(playGame(randomMovePlayer,randomMovePlayer)) })
 print(proc.time() - ptm)
 
 rows <- reduce(games,function(acc,game) { return(acc+game$numMoves) },.init=0)
 dt <- data.table(
-    class=rep(0,rows), 
+    gameId=rep(0,rows),
     numMoves=rep(0,rows), 
+    winner=rep(0,rows),
+    startingPlayer=rep(0,rows),
+    
     moveNumber=rep(0,rows),
-    move=rep(0,rows)
+    result=rep(0,rows), 
+    move=rep(0,rows),
+    player=rep(0,rows)
 )
 mat <- as.matrix(dt)  
+gameIndex <- 0
 
 strip <- function(acc,game) {
   for(i in c(1:game$numMoves)) {
-    class <- 0
+    result <- 0
     if(game$winner != NONE) {
-      if(game$movesP[i] == game$winner) { class <- 2 } 
-      else { class <- 1 }
+      if(game$movesP[i] == game$winner) { result <- 2 } 
+      else { result <- 1 }
     }
   
-    mat[acc,1] <<- class
+    mat[acc,1] <<- gameIndex
     mat[acc,2] <<- game$numMoves
-    mat[acc,3] <<- i
-    mat[acc,4] <<- game$moves[i]
+    mat[acc,3] <<- switch(game$winner,X=0,O=1,"_"=2)
+    mat[acc,4] <<- switch(game$startingPlayer,X=0,O=1)
+
+    mat[acc,5] <<- i
+    mat[acc,6] <<- result
+    mat[acc,7] <<- game$moves[i]
+    mat[acc,8] <<- switch(game$movesP[i],X=0,O=1)
+      
     acc <- acc + 1
   }
+  gameIndex <<- gameIndex+1
   return(acc)
 }
 
@@ -39,6 +53,10 @@ ptm <- proc.time()
 reduce(games,strip,.init=1)
 print(proc.time() - ptm)
 dt <- as.data.frame(mat)
+dt$result <- factor(dt$result,labels=c("Draw","Loss","Win")) 
+dt$move <- factor(dt$move) 
+dt$player <- factor(dt$player,label=c(X,O))
+dt$winner <- factor(dt$winner,label=c(X,O,"NONE"))
 saveRDS(dt,"moves100k.rds")
 
 
