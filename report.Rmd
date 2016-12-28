@@ -32,10 +32,12 @@ Move specific elements
 ## New players
 I am going to develop some new players based on the anayslsis.
 
+# Two random players
+
 ## Initial analysis
 ```{r load_data,echo=FALSE}
 d <- readRDS("./moves100k.rds")
-numMovesStats = d %>% filter(moveNumber==1) %>% summarise(mean=mean(numMoves),sd=sd(numMoves)) 
+numMovesStats = d %>% filter(moveNumber==1) %>% summarise(median=median(numMoves), mean=mean(numMoves),sd=sd(numMoves)) 
 ```
 
 Total number of games ```r length(unique(d$gameId))```
@@ -50,6 +52,17 @@ Number of game state ```r length(unique(d$winner))``` [```r levels(d$winner)```]
 
 Average number of moves per game ```r numMovesStats$mean``` with a sd of ```r numMovesStats$sd```
 
+Minimum number of moves per game ```r min(d$numMoves)```
+
+Starting players seems to be randoly distributed:
+```{r staring_player_stats,echo=FALSE}
+d_startingPlayer <- d %>% group_by(startingPlayer) %>% summarise(cnt=n())
+print(d_startingPlayer)
+bt1 <- binom.test(d_startingPlayer[1,]$cnt,d_startingPlayer[1,]$cnt+d_startingPlayer[2,]$cnt)
+print(bt1)
+```
+
+Looking at the number of wins per user it seem like wins and losses are randomly distributed between the two players.
 ```{r game_stats,echo=FALSE}
 stats = d %>% 
         filter(moveNumber==1) %>% 
@@ -58,6 +71,8 @@ stats = d %>%
 print(stats)
 ```
 
+
+A binomial test confirms that the probability of winning and losing a random game is 50%.
 ```{r win_loss_random,echo=FALSE}
 wins <- stats$count[1]
 losses <- stats$count[2]
@@ -67,11 +82,72 @@ gd <- d %>%
      filter(moveNumber==1) %>% 
      group_by(winner) 
 
-g0 <- ggplot(data=gd,aes(x=winner,fill=as.factor(winner)))+ geom_bar()+scale_fill_brewer(palette = "Accent")
+g0 <- ggplot(data=gd,aes(x=winner,fill=winner))+ geom_bar()+scale_fill_brewer(palette = "Accent")
 print(g0)
 ```
 
+## Move Number Analysis
+I found the following graph very interresting:
+```{r move_wl_graph,echo=FALSE}
+g1 <- ggplot(data=d,aes(x=moveNumber,fill=result))+
+      geom_bar()+
+      scale_x_discrete(name ="Move Number", limits=unique(d$moveNumber) )+
+      scale_fill_brewer(palette = "Accent") 
+print(g1)
+```
 
+It's a plot of the number of eventual wins, losses and draws resulting from a particular tien number. Where turn number here is a sinomym for move number. From this graph these interresting observations pop up:
+
+1. It seems like the player who playes first has a distinct advantage.  
+2. After turn 5 the first player's advantage increases 
+3. After turn 5 the probability of a draw increases.
+
+Lets look at this data but in terms of probabilities of winning and losing:
+
+```{r move_wl_last4_turns,echo=FALSE}
+d2 <- d %>% group_by(moveNumber) %>% summarize(count=n()) %>% inner_join(d,by="moveNumber") %>% group_by(moveNumber,result) %>% summarise(perc=n()/unique(count))
+
+g2 <- ggplot(data=d2,aes(x=moveNumber,y=perc,color=result))+
+      geom_point(alpha=0.5) +
+      scale_x_discrete(name ="Move Number", limits=unique(d$moveNumber) )+
+      scale_color_brewer(palette = "Accent")  +
+      geom_smooth(method="loess",se=FALSE)
+print(g2)
+```
+
+This graph shows the obesrvation much more clearly.
+
+## Move analysis
+Now lets look at moves idivisuallin outside of te context of a particular game. The firts thing that comes to mind is a graph of how many times a particular move led to a particular outcome:
+
+```{r move_outcome_graph,echo=FALSE}
+d3 <- d %>% group_by(move) %>% 
+      summarize(count=n()) %>% 
+      inner_join(d,by="move") %>% 
+      group_by(move,result) %>% 
+      summarise(perc=n()/unique(count))
+g3 <- ggplot(data=d3,aes(x=move,y=perc,fill=result))+
+      geom_bar(stat="identity")+
+      scale_x_discrete(name ="Move", limits=c(1:9) )+
+      scale_fill_brewer(palette = "Accent") 
+print(g3)
+```
+
+What a beautiful graph. It shows us exactly which moves has the highest probabilty of leading to a win. It seems like move 5 should be the first choice follwed by 1,3,7 and 9 in no particular order and then 2,4,6 and 8 in no particular order.
+
+## Recap
+We know now that the staring player has an advantage. We also know that selecting move 5 provides an advantage. My suspicion is that the staring player has an advantage because they will always *assumes prior knowledge*  be able to select move 5. 
+
+
+
+
+
+
+
+
+## Todo
+* Fix the graph lables - Specifically Y axis and legend 
+* Maybe remove player X and O to remove prior knowledge bais
 
 ## Questions
 

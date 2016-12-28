@@ -57,6 +57,7 @@ dt$result <- factor(dt$result,labels=c("Draw","Loss","Win"))
 dt$move <- factor(dt$move) 
 dt$player <- factor(dt$player,label=c(X,O))
 dt$winner <- factor(dt$winner,label=c(X,O,"NONE"))
+dt$startingPlayer <- factor(dt$startingPlayer,label=c(X,O))
 saveRDS(dt,"moves100k.rds")
 
 
