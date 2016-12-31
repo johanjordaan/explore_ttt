@@ -37,16 +37,26 @@ I am going to develop some new players based on the anayslsis.
 ## Initial analysis
 ```{r load_data,echo=FALSE}
 d <- readRDS("./moves100k.rds")
-numMovesStats = d %>% filter(moveNumber==1) %>% summarise(median=median(numMoves), mean=mean(numMoves),sd=sd(numMoves)) 
+numMovesStats <- d %>% 
+                 filter(moveNumber==1) %>% 
+                 summarise(
+                   median=median(numMoves),
+                   mean=mean(numMoves),
+                   sd=sd(numMoves)
+                  ) 
+
+numGames <- length(unique(d$gameId))
+numMoves <- nrow(d)
+numPlayers <- length(unique(d$player))
 ```
 
-Total number of games ```r length(unique(d$gameId))```
+Total number of games ```r numGames```
 
-Total number of moves ```r nrow(d)```
+Total number of moves ```r numMoves```
 
-Number of players ```r length(unique(d$player))``` [```r levels(d$player)```]
+Number of players ```r numPlayers``` [```r levels(d$player)```]
 
-Number of game state ```r length(unique(d$winner))``` [```r levels(d$winner)```]
+Number of game state ```r length(unique(d$result))``` [```r levels(d$result)```]
 
 ## Basic stats
 
@@ -136,9 +146,18 @@ print(g3)
 What a beautiful graph. It shows us exactly which moves has the highest probabilty of leading to a win. It seems like move 5 should be the first choice follwed by 1,3,7 and 9 in no particular order and then 2,4,6 and 8 in no particular order.
 
 ## Recap
-We know now that the staring player has an advantage. We also know that selecting move 5 provides an advantage. My suspicion is that the staring player has an advantage because they will always *assumes prior knowledge*  be able to select move 5. 
+We know now that the staring player has an advantage. We also know that selecting move 5 provides an advantage. My suspicion is that the starting player has an advantage bacause they have a higher probability of selecting move 5.
 
+## Starting Player Analysis
+```{r starting_player,echo=FALSE}
+startingPlayerAnalysis <- d %>% 
+                  filter(player==startingPlayer,moveNumber==1) %>%
+                  group_by(result,player) %>% 
+                  summarize(cnt=n()/numGames)
 
+print(startingPlayerAnalysis)
+
+```
 
 
 
